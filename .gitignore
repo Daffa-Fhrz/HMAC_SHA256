@@ -1,0 +1,37 @@
+# Hasil simulasi cocotb / Icarus Verilog
+sim_build/
+results.xml
+*.vvp
+*.vcd
+*.fst
+*.fst.hier
+*.gtkw.bak
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Quartus
+db/
+incremental_db/
+output_files/
+simulation/
+greybox_tmp/
+*.qws
+*.rpt
+*.summary
+*.sof
+*.pof
+*.jdi
+*.sld
+*.done
+*.smsg
+*.pin
+
+# Editor dan sistem
+.vscode/
+*.swp
+*~
+.DS_Store
