@@ -82,19 +82,6 @@ cocok. Parameter `MSG_BITS` di `hmac_sha256` sudah disiapkan untuk ini.
 Angka-angka itu mencakup pemalsuan dan peredaran ilegal secara umum. Chip ini
 menyasar bagian yang bergantung pada tanda keaslian yang bisa ditiru.
 
-**Mengapa cocok untuk Peruri**
-
-- Kompetensi inti Peruri adalah penjamin keaslian. Chip ini membawa peran itu dari
-  cetakan dan kode ke perangkat keras.
-- Peruri Code sudah dipakai untuk penjaminan keaslian, kontrol distribusi, dan
-  perlindungan merek, dengan teknologi Secure QR, RFID, NFC, dan IoT. Kode cetak bisa
-  disalin; chip dengan kunci di dalamnya tidak. Chip ini menjadi tingkat keamanan
-  yang lebih tinggi di lini produk yang sama.
-- Platform pengawasan yang sudah ada (Peruri Trust) bisa menjadi tempat server
-  verifikasi dan pencatatan nomor urut.
-- Chip yang dirancang di dalam negeri mengurangi ketergantungan pada chip keamanan
-  impor, sejalan dengan tujuan Sandbox Desain Chip Merah Putih.
-
 **Model pendapatan**
 
 | Sumber | Bentuk |
