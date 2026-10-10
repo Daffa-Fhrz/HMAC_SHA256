@@ -4,7 +4,12 @@
 # Padding pesan dikerjakan di sini, karena core menerima blok 512 bit yang
 # sudah di-padding.
 #
-# Menjalankan:  make            (di folder ini, butuh cocotb dan Icarus Verilog)
+# Setiap hash yang dihitung dicetak berdampingan dengan hasil hashlib:
+#     verilog : <digest dari RTL>
+#     hashlib : <digest dari Python>
+#     hasil   : COCOK / BEDA
+#
+# Menjalankan:  make            (butuh cocotb dan Icarus Verilog)
 
 import hashlib
 import random
@@ -83,9 +88,33 @@ async def sha256(dut, message: bytes) -> bytes:
     return int(dut.digest.value).to_bytes(32, "big")
 
 
+def preview(message: bytes, limit: int = 24) -> str:
+    """Tampilan singkat pesan untuk log: teks jika bisa dicetak, selain itu heksadesimal."""
+    if len(message) == 0:
+        return '""'
+    if all(32 <= b < 127 for b in message):
+        text = message.decode("ascii")
+        return f'"{text[:limit]}{"..." if len(text) > limit else ""}"'
+    head = message[:limit // 2].hex()
+    return f'0x{head}{"..." if len(message) > limit // 2 else ""}'
+
+
+def report(dut, message: bytes, got: bytes, want: bytes, label: str = ""):
+    """Cetak perbandingan hasil Verilog dan hashlib ke log simulasi."""
+    dut._log.info(
+        "%s%s (%d byte)\n"
+        "    verilog : %s\n"
+        "    hashlib : %s\n"
+        "    hasil   : %s",
+        f"[{label}] " if label else "", preview(message), len(message),
+        got.hex(), want.hex(), "COCOK" if got == want else "BEDA")
+
+
 async def check(dut, message: bytes, label: str = ""):
+    """Hitung hash dengan DUT, cetak perbandingannya dengan hashlib, lalu periksa."""
     got = await sha256(dut, message)
     want = hashlib.sha256(message).digest()
+    report(dut, message, got, want, label)
     assert got == want, (
         f"{label or 'pesan'} ({len(message)} byte): "
         f"dapat {got.hex()}, seharusnya {want.hex()}")
@@ -120,8 +149,10 @@ async def test_nist_vectors(dut):
     ]
     for message, expected in vectors:
         got = await sha256(dut, message)
+        want = hashlib.sha256(message).digest()
+        report(dut, message, got, want, "NIST")
+        assert want.hex() == expected, "hashlib tidak sama dengan nilai resmi NIST"
         assert got.hex() == expected, f"{message!r}: dapat {got.hex()}"
-        dut._log.info("LULUS %d byte -> %s...", len(message), expected[:16])
 
 
 @cocotb.test()
@@ -174,6 +205,7 @@ async def test_latency_and_handshake(dut):
     dut._log.info("latensi per blok = %d siklus", cycles)
 
     digest = int(dut.digest.value)
+    report(dut, b"abc", digest.to_bytes(32, "big"), hashlib.sha256(b"abc").digest(), "latensi")
     assert digest.to_bytes(32, "big") == hashlib.sha256(b"abc").digest()
 
     await RisingEdge(dut.clk)
@@ -204,7 +236,9 @@ async def test_block_sampled_only_at_start(dut):
             break
     else:
         raise AssertionError("timeout")
-    assert int(dut.digest.value).to_bytes(32, "big") == hashlib.sha256(b"abc").digest()
+    got = int(dut.digest.value).to_bytes(32, "big")
+    report(dut, b"abc", got, hashlib.sha256(b"abc").digest(), "block diganggu")
+    assert got == hashlib.sha256(b"abc").digest()
 
 
 @cocotb.test()
@@ -224,7 +258,9 @@ async def test_start_ignored_while_busy(dut):
     dut.next.value = 0
 
     await wait_digest(dut)
-    assert int(dut.digest.value).to_bytes(32, "big") == hashlib.sha256(b"abc").digest()
+    got = int(dut.digest.value).to_bytes(32, "big")
+    report(dut, b"abc", got, hashlib.sha256(b"abc").digest(), "init saat sibuk")
+    assert got == hashlib.sha256(b"abc").digest()
 
 
 @cocotb.test()
